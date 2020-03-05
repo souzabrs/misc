@@ -69,6 +69,8 @@ module.exports = {
 					.map(() => vocabulary[~~(Math.random() * 100)])
 					.join(' ');
 
+				piece.published = true;
+
 				let doc = await self.insert(req, piece);
 
 				//insert a equivalent doc in search collection;
