@@ -7,10 +7,10 @@ and slow in collections with many big documents:
 
 ```javascript
 db.aposDocs.find(
-	{ $text: { $search: 'justOneWord' } },
-	{ score: { $meta: 'textScore' } }
+  { $text: { $search: 'justOneWord' } },
+  { score: { $meta: 'textScore' } }
 ).sort({
-	score: { $meta: 'textScore' }
+  score: { $meta: 'textScore' }
 }).limit(10);
 ```
 
@@ -22,12 +22,12 @@ So, if we have a collection with many documents like this:
 
 ```javascript
 {
-	title: 'Short string, with recurring common words',
-	data: 'big strings, arrays, embedded documents...',
+  title: 'Short string, with recurring common words',
+  data: 'big strings, arrays, embedded documents...',
 }
 ```
 
-E.g.: Each document representing a vehicle and `title` being the its 
+E.g.: Each document representing a vehicle and `title` being its
 description, like 'Green truck, year 2005, with six tires', and `data`
 containing anything big, like an array with the names of every person
 that have already been inside the vehicle.
@@ -52,38 +52,38 @@ Copying just the fields used to the text search, like this:
 
 ```javascript
 var docs = db.aposDocs.find(
-	{ 
-		type: 'vehicle',
-		 published: true,
-		 trash: false,
-		 highSearchText: { $ne: '' }
-	},
-	{ _id: 1, highSearchText: 1 }
+  {
+    type: 'vehicle',
+     published: true,
+     trash: false,
+     highSearchText: { $ne: '' }
+  },
+  { _id: 1, highSearchText: 1 }
 );
 
-while (docs.hasNext()) { 
-	let { 
-		_id,
-		highSearchText,
-		lowSearchText,
-		searchBoost,
-		title,
-		highSearchWords
-	}  = docs.next();
+while (docs.hasNext()) {
+  let {
+    _id,
+    highSearchText,
+    lowSearchText,
+    searchBoost,
+    title,
+    highSearchWords
+  }  = docs.next();
 
-	db.aposDocs.insertOne({
-		type: 'search',
-		piece_id: _id,
-		slug: 's-' + _id,
-		highSearchText,
-		highSearchWords,
-		lowSearchText,
-		searchBoost,
-		title,
-		//hidden piece
-		published: false,
-		trash: false
-	});
+  db.aposDocs.insertOne({
+    type: 'search',
+    piece_id: _id,
+    slug: 's-' + _id,
+    highSearchText,
+    highSearchWords,
+    lowSearchText,
+    searchBoost,
+    title,
+    //hidden piece
+    published: false,
+    trash: false
+  });
 }
 ```
 
@@ -91,41 +91,41 @@ And creating a partial index like this:
 
 ```javascript
 db.aposDocs.createIndex({
-	highSearchText: 'text',
-	lowSearhText: 'text',
-	title: 'text',
-	searchBoost: 'text'
+  highSearchText: 'text',
+  lowSearhText: 'text',
+  title: 'text',
+  searchBoost: 'text'
 },{
-	partialFilterExpression: {
-		type: 'search'
-	},
-	weights: {
-		highSearchText: 4,
-		lowSearchText: 1,
-		title: 2,
-		searchBoost: 8 
-	},
-	default_language: 'pt'
+  partialFilterExpression: {
+    type: 'search'
+  },
+  weights: {
+    highSearchText: 4,
+    lowSearchText: 1,
+    title: 2,
+    searchBoost: 8
+  },
+  default_language: 'pt'
 })
 ```
 
-Or prefixing with type, like this: 
+Or prefixing with type, like this:
 
 ```javascript
 db.aposDocs.createIndex({
-	type: 1,
-	highSearchText: 'text',
-	lowSearhText: 'text',
-	title: 'text',
-	searchBoost: 'text'
+  type: 1,
+  highSearchText: 'text',
+  lowSearhText: 'text',
+  title: 'text',
+  searchBoost: 'text'
 },{
-	weights: {
-		highSearchText: 4,
-		lowSearchText: 1,
-		title: 2,
-		searchBoost: 8 
-	},
-	default_language: 'pt'
+  weights: {
+    highSearchText: 4,
+    lowSearchText: 1,
+    title: 2,
+    searchBoost: 8
+  },
+  default_language: 'pt'
 })
 ```
 
@@ -133,24 +133,22 @@ db.aposDocs.createIndex({
 
 ```javascript
 db.aposDocs.find(
-	{
-		//Specifying the type is mandatory, now
-		type: 'search',
-		$text: { $search: 'justOneWord' }
-	},
-	{ score: { $meta: 'textScore' } }
+  {
+    //Specifying the type is mandatory, now
+    type: 'search',
+    $text: { $search: 'justOneWord' }
+  },
+  { score: { $meta: 'textScore' } }
 ).sort(
-	{ score: { $meta: 'textScore' } }
+  { score: { $meta: 'textScore' } }
 ).limit(10);
 ```
 
-**
-Note #1: without prefixing or partial index is necessary, even there is
-an index created as `db.aposDocs.createIndex({ type: 1 })`.
+**Note #1: without prefixing or partial index is necessary, even there is
+an index created as `db.aposDocs.createIndex({ type: 1 })`.**
 
-Note #2: copying the search fields to another collection is even better
-because is more organized and elegant, but the results are similar.
-**
+**Note #2: copying the search fields to another collection is even better
+because is more organized and elegant, but the results are similar.**
 
 ## 3) The driver version doesn't matter
 
@@ -165,20 +163,20 @@ db.aposDocs.createIndex({ highSearchText: 'text' });
 and
 
 ```javascript
-db.aposDocs.createIndex({ 
-	highSearchText: 'text', 
-	lowSearchText: 'text',
-	title: 'text',
-	searchBoost: 'text'
+db.aposDocs.createIndex({
+  highSearchText: 'text',
+  lowSearchText: 'text',
+  title: 'text',
+  searchBoost: 'text'
 },
 {
-	weights: {
-		highSearchText: 4,
-		lowSearchText: 1,
-		title: 2,
-		searchBoost: 8 
-	},
-	default_language: 'pt'
+  weights: {
+    highSearchText: 4,
+    lowSearchText: 1,
+    title: 2,
+    searchBoost: 8
+  },
+  default_language: 'pt'
 });
 ```
 
@@ -190,10 +188,10 @@ This:
 
 ```javascript
 db.aposDocs.find(
-		{ $text: { $search: 'justOneWord' } },
-		{ _id: 1, score: { $meta: 'textScore' } }
+  { $text: { $search: 'justOneWord' } },
+  { _id: 1, score: { $meta: 'textScore' } }
 ).sort({
-	score: { $meta: 'textScore' }
+  score: { $meta: 'textScore' }
 }).limit(1);
 ```
 
