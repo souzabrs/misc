@@ -1,4 +1,5 @@
 const { performance } = require('perf_hooks');
+const { inspect } = require('util');
 module.exports = {
 	name: 'big-piece',
 	label: 'Big Piece',
@@ -185,6 +186,82 @@ module.exports = {
 			self.testSeparateCollection
 		);
 
+		self.testAposDocsCollection = async () => {
+			const queries = globalDoc.sampleQueries;
+			const stats = {
+				times: [],
+				totalTime: 0,
+				totalResults: 0
+			};
+
+			for (let query of queries) {
+				let start = performance.now();
+
+				let str = self.apos.utils.sortify(query);
+				let words = str.split(/ /);
+				let distQuery = words.map(s => ({
+					highSearchWords: self.apos.utils.searchify(s, true)
+				}));
+				distQuery.push({
+					highSearchText: self.apos.utils.searchify(query)
+				});
+				//distQuery.push({ type: 'big-piece' });
+				distQuery = {
+					$and: distQuery
+				};
+				//console.log(inspect(distQuery, { depth: null }));
+
+				//get distinct words
+				let dist = await self.apos.docs.db.distinct('w', distQuery);
+				dist = dist.filter(r =>
+					words.find(w => r.substring(0, w.length) === w)
+				);
+
+				//text search to get the ids
+				let ids = await self.apos.docs.db
+					.find(
+						{
+							//type: 'big-piece',
+							//published: true,
+							//trash: { $ne: true },
+							$text: { $search: dist.join(' ') }
+						},
+						{ _id: 1, score: { $meta: 'textScore' } }
+					)
+					.sort({ score: { $meta: 'textScore' } })
+					.limit(10)
+					.toArray();
+
+				ids = ids.map(i => i._id);
+
+				//get the related docs
+				let results = await self
+					.find(req, { _id: { $in: ids } })
+					.projection({ _id: 1, title: 1, _url: 1 })
+					.sort(false)
+					.toArray();
+
+				//sort
+				let docs = [];
+				for (let r in results) {
+					let index = ids.indexOf(results[r]._id);
+					docs[index] = results[r];
+				}
+
+				stats.totalResults += docs.length;
+				let time = performance.now() - start;
+				stats.times.push(time);
+				stats.totalTime += time;
+			}
+			stats.averageTime = stats.totalTime / queries.length;
+			console.log(JSON.stringify(stats, null, 2));
+		};
+
+		self.addTask(
+			'test-apos-docs',
+			'node app big-pieces:test-apos-docs',
+			self.testAposDocsCollection
+		);
 		function randomWord() {
 			let word = new Array(1 + ~~(Math.random() * 14));
 			for (let i = 0; i != word.length; i++) {
