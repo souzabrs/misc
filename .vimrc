@@ -7,6 +7,7 @@ let g:workspace_autosave = 0
 set wildmenu
 set ts=2
 set shiftwidth=2
+set expandtab
 set autoindent
 set mouse=a
 set nowrap
@@ -43,12 +44,14 @@ let g:AutoPairsMultilineClose = 0
 nnoremap <Leader>f :ALEFix<CR>
 nnoremap <Leader>t :silent %!prettier --stdin --stdin-filepath % <CR>``
 nnoremap <Leader>p vip :'<,'>!prettier --stdin --stdin-filepath % <CR> vip=``
-vnoremap <Leader>b :'<,'>!prettier --stdin --stdin-filepath % <CR> ='] 
+"vnoremap <Leader>b :'<,'>!prettier --stdin --stdin-filepath % <CR> ='] 
 nnoremap <Leader>y :set list!<CR>:set number!<CR>
 nnoremap p p=`]
 nnoremap <c-p> p
 nnoremap <Leader>j JlvF'd75<bar>bi' +<CR>'<ESC>
 nnoremap <Leader>h J75<bar>bi<CR><ESC>
+"break the line in the 79th column
+nnoremap <Leader>b 79<bar>i<Bslash><CR><ESC>
 map [[ ?{<CR>w99[{
 map ][ /}<CR>b99]}
 map ]] j0[[%/{<CR>
